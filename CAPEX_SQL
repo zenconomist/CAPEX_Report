@@ -1,0 +1,239 @@
+'Documentation for CAPEX_Report_Daily-Invest-Refresh Process'
+
+'Csatolt Excel-ek: 1_3_1_0_kivetelek; 1_KOB1; 2_KOB2; 3_ME2K; 4_EBA_full; 5_BEST_KONT; [6_Árfolyamok] //Forrás: MNB; 7_AUFK_ABRV; 8_SE16N_ANLA; 9_SE16N_ANLZ; 10_KOB4_Budget; 11_Tukor; 12_Tukor_kivetelek;'
+
+'0_0_EBA_Rendeles_Tetel_azonositok'
+SELECT [5_BEST_KONT].[Besz#bizl#] & "-" & [5_BEST_KONT].[Tétel] AS rend_az, [5_BEST_KONT].Eszköz, IIf([5_BEST_KONT].[BMIg]="","",[5_BEST_KONT].[BMIg] & "-" & [5_BEST_KONT].[Tétel2]) AS BMIg_az, IIf([5_BEST_KONT].[Szüks#szám]="","",Right([5_BEST_KONT].[Szüks#szám],6) & "-" & [5_BEST_KONT].[Tétel2]) AS EBA_az
+FROM 5_BEST_KONT;
+
+'0_1_KH_prkod_torzs'
+SELECT [1_9_Budget].KH, [1_9_Budget].Kérelem AS Pr_kod
+FROM 1_9_Budget
+GROUP BY [1_9_Budget].KH, [1_9_Budget].Kérelem;
+
+'1_0_EBA_CAPEX_FULL'
+SELECT [4_EBA_full].[Kontírozás típusa], [4_EBA_full].St, [4_EBA_full].[BMIg-Szám], [4_EBA_full].Tétel, [4_EBA_full].[BMIg-Szám] & "-" & [4_EBA_full].[Tétel] AS eba_az, [4_EBA_full].BMIg, [4_EBA_full].[Besz#bizl#], [4_EBA_full].[Co#], [4_EBA_full].[Ktg#helyek], [4_EBA_full].Szállító, [4_EBA_full].[1# név], [4_EBA_full].[Jóváhagyási folyamat], [4_EBA_full].[Anyag rövid szövege], [4_EBA_full].SzállDát, [4_EBA_full].Angebotsnummer, [4_EBA_full].Pnem, [4_EBA_full].Összeg, [4_EBA_full].[Pnem1], [4_EBA_full].Fogadó, [4_EBA_full].Lerakodóhely, [4_EBA_full].KérelemDát, [4_EBA_full].[Dolgozó ill# pályázó neve], [4_EBA_full].Eszköz, [4_EBA_full].Alsz, [4_EBA_full].[Ktg#helyek1], [4_EBA_full].[Beruházási rendelés], [4_EBA_full].[Rendelés rövid szövege], [4_EBA_full].Mennyiség, [4_EBA_full].ME, [4_EBA_full].[ME1], [4_EBA_full].[Egységár/ME], [4_EBA_full].[Beruházás ok], [4_EBA_full].[Beruházás ok1]
+FROM 4_EBA_full;
+
+'1_1_1_Nyitott_EBA_full'
+SELECT [4_EBA_full].St, [4_EBA_full].[BMIg-Szám], [4_EBA_full].Tétel, [4_EBA_full].[BMIg-Szám] & "-" & [4_EBA_full].[Tétel] AS eba_az, [4_EBA_full].BMIg, [4_EBA_full].[BMIg] & "-" & ([4_EBA_full].[Tétel]/10) AS BMig_az, [4_EBA_full].[Besz#bizl#], [4_EBA_full].[Besz#bizl#] & "-" & ([4_EBA_full].[Tétel]/10) AS rend_az, [4_EBA_full].[Co#], [4_EBA_full].[Ktg#helyek], [4_EBA_full].Szállító, [4_EBA_full].[1# név], [4_EBA_full].[Jóváhagyási folyamat], [4_EBA_full].[Anyag rövid szövege], [4_EBA_full].SzállDát, [4_EBA_full].Angebotsnummer, [4_EBA_full].Pnem, [4_EBA_full].Összeg, [4_EBA_full].Fogadó, [4_EBA_full].Lerakodóhely, [4_EBA_full].KérelemDát, [4_EBA_full].[Dolgozó ill# pályázó neve], [4_EBA_full].Eszköz, [4_EBA_full].Alsz, [4_EBA_full].[Beruházási rendelés], [4_EBA_full].[Rendelés rövid szövege], [4_EBA_full].Mennyiség, [4_EBA_full].ME, [4_EBA_full].[Egységár/ME], [4_EBA_full].[Mennyiség]*[4_EBA_full].[Egységár/ME]*IIf([4_EBA_full].[Pnem]="EUR",1,IIf([4_EBA_full].[Pnem]="HUF",[1_4_Arfolyamok].[HUF_n],IIf([4_EBA_full].[Pnem]="USD",[1_4_Arfolyamok].[USD_n],IIf([4_EBA_full].[Pnem]="CNY",[1_4_Arfolyamok].[CNY_n],0)))) AS eba_sum, [4_EBA_full].[Beruházás ok]
+FROM 4_EBA_full LEFT JOIN 1_4_Arfolyamok ON [4_EBA_full].KérelemDát = [1_4_Arfolyamok].[Dátum/ISO]
+WHERE ((([4_EBA_full].St)<>"00" And ([4_EBA_full].St)<>"95" And ([4_EBA_full].St)<>"96" And ([4_EBA_full].St)<>"99" And ([4_EBA_full].St)<>"") AND (([4_EBA_full].[Kontírozás típusa])="A"));
+
+'1_1_2_EBA_lista_full'
+SELECT [4_EBA_full].St, [4_EBA_full].[BMIg-Szám], [4_EBA_full].Tétel, [4_EBA_full].[BMIg-Szám] & "-" & [4_EBA_full].[Tétel] AS eba_az, [4_EBA_full].BMIg, [4_EBA_full].[BMIg] & "-" & ([4_EBA_full].[Tétel]/10) AS BMig_az, [4_EBA_full].[Besz#bizl#], [4_EBA_full].[Besz#bizl#] & "-" & ([4_EBA_full].[Tétel]/10) AS rend_az, [4_EBA_full].[Co#], [4_EBA_full].[Ktg#helyek], [4_EBA_full].Szállító, [4_EBA_full].[1# név], [4_EBA_full].[Jóváhagyási folyamat], [4_EBA_full].[Anyag rövid szövege], [4_EBA_full].SzállDát, [4_EBA_full].Angebotsnummer, [4_EBA_full].Pnem, [4_EBA_full].Összeg, [4_EBA_full].Fogadó, [4_EBA_full].Lerakodóhely, [4_EBA_full].KérelemDát, [4_EBA_full].[Dolgozó ill# pályázó neve], [4_EBA_full].Eszköz, [4_EBA_full].Alsz, [4_EBA_full].[Beruházási rendelés], [4_EBA_full].[Rendelés rövid szövege], [4_EBA_full].Mennyiség, [4_EBA_full].ME, [4_EBA_full].[Egységár/ME], [4_EBA_full].[Mennyiség]*[4_EBA_full].[Egységár/ME]*IIf([4_EBA_full].[Pnem]="EUR",1,IIf([4_EBA_full].[Pnem]="HUF",[1_4_Arfolyamok].[HUF_n],IIf([4_EBA_full].[Pnem]="USD",[1_4_Arfolyamok].[USD_n],IIf([4_EBA_full].[Pnem]="CNY",[1_4_Arfolyamok].[CNY_n],0)))) AS eba_sum, [4_EBA_full].[Beruházás ok]
+FROM 4_EBA_full LEFT JOIN 1_4_Arfolyamok ON [4_EBA_full].KérelemDát = [1_4_Arfolyamok].[Dátum/ISO];
+
+'1_2_Nyitott_Rendelés'
+SELECT [2_KOB2].Kérelem, [2_KOB2].[Objektum megnevezése], [2_KOB2].Megnevezés, [2_KOB2].[Gazdasági év], [2_KOB2].Periódus, [2_KOB2].Költségnem, [2_KOB2].[Költségnem megnev#], [2_KOB2].[Referenciabiz#száma], [2_KOB2].[Referenc#tétel], [2_KOB2].Szállító, [2_KOB2].[Érték/TrPénznem], [2_KOB2].[Tranzakció pénzneme], [2_KOB2].[Érték/beszámoló Pnem], [2_KOB2].[Beszámoló pénzneme], [2_KOB2].[Bizonylat dátuma], [2_KOB2].Összmennyiség, [2_KOB2].[Mennyiségi egység], [2_KOB2].[Terhelés dátuma], [2_KOB2].[Referenciabiz#száma] & "-" & ([2_KOB2].[Referenc#tétel]) AS Rend_azon, Left([2_KOB2].[Objektum megnevezése],4) AS KH
+FROM 2_KOB2
+WHERE ((([2_KOB2].[Referenciabiz#száma])<>""));
+
+'1_2_1_Rendeles_SUM'
+SELECT [1_2_Nyitott_Rendelés].Kérelem, [1_2_Nyitott_Rendelés].[Objektum megnevezése], [1_2_Nyitott_Rendelés].Megnevezés, [1_2_Nyitott_Rendelés].[Érték/beszámoló Pnem], [1_2_Nyitott_Rendelés].Rend_azon, [1_2_Nyitott_Rendelés].KH
+FROM 1_2_Nyitott_Rendelés;
+
+'1_3_Számlázott'
+SELECT [1_KOB1].Bizonylatszám, [1_KOB1].Objektum, [1_KOB1].[Objektum megnevezése], [1_KOB1].Megnevezés, [1_KOB1].[Megrendelés szövege], [1_KOB1].[Referenciabiz#száma], [1_KOB1].[Könyvelési sor], [1_KOB1].Periódus, [1_KOB1].Költségnem, [1_KOB1].Felhasználónév, [1_KOB1].Bizonylatfajta, [1_KOB1].Szállító, [1_KOB1].[Az ellenszámla megnevezése], [1_KOB1].[Beszerzési bizonylat], [1_KOB1].Tétel, [1_KOB1].[Könyvelés dátuma], [1_KOB1].[Rögzítés dátuma], [1_KOB1].[Érték/beszámoló Pnem], [1_KOB1].[Beszámoló pénzneme], [1_KOB1].[Érték/TrPénznem], [1_KOB1].[Tranzakció pénzneme], [1_KOB1].[Rögz#összmennyiség], [1_KOB1].[Bizonylat dátuma], [1_KOB1].[Beszerzési bizonylat] & "-" & [1_KOB1].[Tétel] AS Rend_azon, Left([1_KOB1].[Objektum megnevezése],4) AS KH
+FROM 1_KOB1
+WHERE ((([1_KOB1].Objektum)<>"") AND (([1_KOB1].Bizonylatfajta)<>"AA") AND ((Left([1_KOB1].[Objektum megnevezése],4))<>"Leer"));
+
+'1_3_1_Szamla_SUM'
+SELECT [1_3_Számlázott].Objektum, [1_3_Számlázott].[Objektum megnevezése], [1_3_Számlázott].[Megrendelés szövege], [1_3_Számlázott].Rend_azon, [1_3_Számlázott].KH, Sum([1_3_Számlázott].[Érték/beszámoló Pnem]) AS [Érték/beszámoló Pnem]
+FROM 1_3_Számlázott
+GROUP BY [1_3_Számlázott].Objektum, [1_3_Számlázott].[Objektum megnevezése], [1_3_Számlázott].[Megrendelés szövege], [1_3_Számlázott].Rend_azon, [1_3_Számlázott].KH
+HAVING (((Sum([1_3_Számlázott].[Érték/beszámoló Pnem]))<>0));
+
+'1_3_2_791-esek_SUM'
+SELECT [1_3_1_Szamla_SUM].Objektum, [1_3_1_Szamla_SUM].[Objektum megnevezése], [1_3_1_Szamla_SUM].[Megrendelés szövege], [9_SE16N_ANLZ].Költséghely, [8_SE16N_ANLA].[Beruházási rendelés], Sum([1_3_1_Szamla_SUM].[Érték/beszámoló Pnem]) AS [Érték/beszámoló Pnem]
+FROM 1_3_1_Szamla_SUM LEFT JOIN (([1_6_Eszkszam-791_alap] LEFT JOIN 8_SE16N_ANLA ON [1_6_Eszkszam-791_alap].eszk_nr = [8_SE16N_ANLA].Eszköz) LEFT JOIN 9_SE16N_ANLZ ON [1_6_Eszkszam-791_alap].eszk_nr = [9_SE16N_ANLZ].Eszköz) ON [1_3_1_Szamla_SUM].Objektum = [1_6_Eszkszam-791_alap].Rendelés
+GROUP BY [1_3_1_Szamla_SUM].Objektum, [1_3_1_Szamla_SUM].[Objektum megnevezése], [1_3_1_Szamla_SUM].[Megrendelés szövege], [9_SE16N_ANLZ].Költséghely, [8_SE16N_ANLA].[Beruházási rendelés]
+HAVING ((Left([1_3_1_Szamla_SUM].[Objektum],3)="791"));
+
+'1_4_Arfolyamok'
+SELECT [6_Árfolyamok].[Dátum/ISO], [6_Árfolyamok].HUF, [6_Árfolyamok].EUR, [6_Árfolyamok].CNY, [6_Árfolyamok].GBP, [6_Árfolyamok].JPY, [6_Árfolyamok].USD, 1/[EUR] AS HUF_n, [USD]/[EUR] AS USD_n, [CNY]/[EUR] AS CNY_n
+FROM 6_Árfolyamok;
+
+'1_5_ME2K_Eszkozrendelesek'
+SELECT [3_ME2K].[Beszerzési bizonylat], [3_ME2K].Tétel, [Beszerzési bizonylat] & "-" & [Tétel] AS rend_azon, [3_ME2K].Kérelem, [3_ME2K].Eszköz, [3_ME2K].[Főkönyvi számla], [3_ME2K].[Rövid szöveg], [3_ME2K].[Szállító neve], [3_ME2K].Alszám, [3_ME2K].[Beszerzési ár ME], [3_ME2K].Költséghely, [3_ME2K].Lerakodóhely, [3_ME2K].[Szállító/szállító gyár], [3_ME2K].[Nettó ár], [3_ME2K].Pénznem, [3_ME2K].[Megrendelés mennyis#], [3_ME2K].[Még szállítandó (mennyiség)], [3_ME2K].[Még szállítandó (érték)], [3_ME2K].[Még számlázandó (mennyiség)], [3_ME2K].[Még számlázandó (érték)], [3_ME2K].[Bizonylat dátuma], [3_ME2K].[Kontírozási mennyiség], [3_ME2K].[Létrehozás dátuma], [3_ME2K].[PST-elem], [3_ME2K].[PST-elem1], [3_ME2K].[Ért# bizonylat]
+FROM 3_ME2K;
+
+'1_6_Eszkszam-791_alap'
+SELECT [7_AUFK_ABRV].Rendelés, [7_AUFK_ABRV].EmpfObjnr, Mid([7_AUFK_ABRV].[EmpfObjnr],13,6) AS eszk_nr
+FROM 7_AUFK_ABRV;
+
+'1_7_Nyitott_BMIg_az'
+SELECT [4_EBA_full].[BMIg-Szám], [4_EBA_full].Tétel, [4_EBA_full].BMIg, [4_EBA_full].[Besz#bizl#], [4_EBA_full].[BMIg-Szám] & "-" & [4_EBA_full].[Tétel] AS eba_az, [4_EBA_full].[BMIg] & "-" & ([4_EBA_full].[Tétel]) AS bmig_az
+FROM 4_EBA_full
+WHERE ((([4_EBA_full].BMIg)<>""));
+
+'1_8_Nyitott_BMIg'
+SELECT [1_2_1_Rendeles_SUM].Rend_azon, [1_7_Nyitott_BMIg_az].bmig_az, [1_2_1_Rendeles_SUM].KH, [1_2_1_Rendeles_SUM].Kérelem, [1_2_1_Rendeles_SUM].Megnevezés, [1_1_2_EBA_lista_full].Lerakodóhely, [1_1_2_EBA_lista_full].Pnem, [1_1_2_EBA_lista_full].Mennyiség, [1_2_1_Rendeles_SUM].[Érték/beszámoló Pnem] AS BMIg_alatt, [1_1_2_EBA_lista_full].eba_az
+FROM 1_2_1_Rendeles_SUM LEFT JOIN (1_7_Nyitott_BMIg_az LEFT JOIN 1_1_2_EBA_lista_full ON [1_7_Nyitott_BMIg_az].eba_az = [1_1_2_EBA_lista_full].eba_az) ON [1_2_1_Rendeles_SUM].Rend_azon = [1_7_Nyitott_BMIg_az].bmig_az
+WHERE (((Left([1_2_1_Rendeles_SUM].[Rend_azon],3))="701"));
+
+'1_9_Budget'
+SELECT Left([10_KOB4_Budget].[Objektum megnevezése],4) AS KH, [10_KOB4_Budget].Kérelem, [10_KOB4_Budget].[Objektum megnevezése], Sum([10_KOB4_Budget].[Éves ktg#keret/keret besz# pnemében]) AS Budget
+FROM 10_KOB4_Budget
+WHERE [10_KOB4_Budget].[Objektum megnevezése]<>""
+GROUP BY Left([10_KOB4_Budget].[Objektum megnevezése],4), [10_KOB4_Budget].Kérelem, [10_KOB4_Budget].[Objektum megnevezése];
+
+'2_1_ME2K-full list'
+SELECT [1_5_ME2K_Eszkozrendelesek].rend_azon, [1_5_ME2K_Eszkozrendelesek].Költséghely, [1_5_ME2K_Eszkozrendelesek].Kérelem, [1_5_ME2K_Eszkozrendelesek].Eszköz, [1_5_ME2K_Eszkozrendelesek].[Főkönyvi számla], [1_5_ME2K_Eszkozrendelesek].[Rövid szöveg], [1_5_ME2K_Eszkozrendelesek].Alszám, [1_5_ME2K_Eszkozrendelesek].Lerakodóhely, [1_5_ME2K_Eszkozrendelesek].Pénznem, [1_5_ME2K_Eszkozrendelesek].[Megrendelés mennyis#], (IIf([1_2_1_Rendeles_SUM].[Érték/beszámoló Pnem] Is Not Null,[1_2_1_Rendeles_SUM].[Érték/beszámoló Pnem],0)+IIf([1_3_1_Szamla_SUM].[Érték/beszámoló Pnem] Is Not Null,[1_3_1_Szamla_SUM].[Érték/beszámoló Pnem],0)) AS Lekot_ossz, IIf([1_2_1_Rendeles_SUM].[KH] Is Not Null,[1_2_1_Rendeles_SUM].[KH],[1_3_1_Szamla_SUM].[KH]) AS 2_1_kh
+FROM (1_5_ME2K_Eszkozrendelesek LEFT JOIN 1_2_1_Rendeles_SUM ON [1_5_ME2K_Eszkozrendelesek].rend_azon = [1_2_1_Rendeles_SUM].Rend_azon) LEFT JOIN 1_3_1_Szamla_SUM ON [1_5_ME2K_Eszkozrendelesek].rend_azon = [1_3_1_Szamla_SUM].Rend_azon
+WHERE ((([1_3_1_Szamla_SUM].[Érték/beszámoló Pnem] Or [1_2_1_Rendeles_SUM].[Érték/beszámoló Pnem]) Is Not Null));
+
+'2_2_Lekotott_osszeg_lista'
+SELECT 
+[2_1_ME2K-full list].rend_azon, 
+[2_1_ME2K-full list].[2_1_kh], 
+[2_1_ME2K-full list].Kérelem, 
+[2_1_ME2K-full list].[Rövid szöveg], 
+[2_1_ME2K-full list].Lerakodóhely, 
+[2_1_ME2K-full list].Pénznem, 
+[2_1_ME2K-full list].[Megrendelés mennyis#], 
+[2_1_ME2K-full list].Lekot_ossz, 
+[1_0_EBA_CAPEX_FULL].eba_az AS eba_tetel_az
+FROM [2_1_ME2K-full list] LEFT JOIN (0_0_EBA_Rendeles_Tetel_azonositok LEFT JOIN 1_0_EBA_CAPEX_FULL ON [0_0_EBA_Rendeles_Tetel_azonositok].EBA_az = [1_0_EBA_CAPEX_FULL].eba_az) ON [2_1_ME2K-full list].rend_azon = [0_0_EBA_Rendeles_Tetel_azonositok].rend_az
+
+UNION SELECT
+[1_1_1_Nyitott_EBA_full].[BMIg-Szám], 
+[1_1_1_Nyitott_EBA_full].[Ktg#helyek], 
+[1_1_1_Nyitott_EBA_full].[Beruházási rendelés], 
+[1_1_1_Nyitott_EBA_full].[Rendelés rövid szövege], 
+[1_1_1_Nyitott_EBA_full].Lerakodóhely, 
+[1_1_1_Nyitott_EBA_full].Pnem, 
+[1_1_1_Nyitott_EBA_full].Mennyiség, 
+[1_1_1_Nyitott_EBA_full].eba_sum, 
+[1_1_1_Nyitott_EBA_full].eba_az
+
+FROM 1_1_1_Nyitott_EBA_full
+
+UNION SELECT 
+[1_8_Nyitott_BMIg].bmig_az, 
+[1_8_Nyitott_BMIg].KH, 
+[1_8_Nyitott_BMIg].Kérelem, 
+[1_8_Nyitott_BMIg].Megnevezés, 
+[1_8_Nyitott_BMIg].Lerakodóhely, 
+[1_8_Nyitott_BMIg].Pnem, 
+[1_8_Nyitott_BMIg].Mennyiség, 
+[1_8_Nyitott_BMIg].BMIg_alatt,
+[1_8_Nyitott_BMIg].eba_az
+
+FROM 1_8_Nyitott_BMIg;
+
+
+
+
+'//Főlista!!
+'
+'2_3_Lekotott_osszeg_full_list'
+SELECT 
+[2_2_Lekotott_osszeg_lista].Rend_azon, 
+IIf([0_1_KH_prkod_torzs].[KH] Is Not Null,[0_1_KH_prkod_torzs].[KH],[2_2_Lekotott_osszeg_lista].[2_1_kh]) AS kh_vegl, 
+[0_0_EBA_Rendeles_Tetel_azonositok].Eszköz AS torzs_eszkoz, 
+[2_2_Lekotott_osszeg_lista].Kérelem, 
+[2_2_Lekotott_osszeg_lista].[Rövid szöveg], 
+[2_2_Lekotott_osszeg_lista].Lerakodóhely, 
+[2_2_Lekotott_osszeg_lista].Pénznem, 
+[2_2_Lekotott_osszeg_lista].[Megrendelés mennyis#], 
+[2_2_Lekotott_osszeg_lista].Lekot_ossz, 
+[2_2_Lekotott_osszeg_lista].eba_tetel_az, 
+[2_1_ME2K-full list].Eszköz, 
+[2_1_ME2K-full list].Alszám, 
+[2_1_ME2K-full list].[Főkönyvi számla], 
+([1_3_1_Szamla_SUM].[Érték/beszámoló Pnem]) AS Szamlazott, 
+([1_2_1_Rendeles_SUM].[Érték/beszámoló Pnem]) AS Megrendelt, 
+([1_1_1_Nyitott_EBA_full].[eba_sum]) AS [EBA-ban]
+
+FROM (((((2_2_Lekotott_osszeg_lista LEFT JOIN [2_1_ME2K-full list] ON [2_2_Lekotott_osszeg_lista].Rend_azon = [2_1_ME2K-full list].rend_azon) LEFT JOIN 1_3_1_Szamla_SUM ON [2_2_Lekotott_osszeg_lista].Rend_azon = [1_3_1_Szamla_SUM].Rend_azon) LEFT JOIN 1_2_1_Rendeles_SUM ON [2_2_Lekotott_osszeg_lista].Rend_azon = [1_2_1_Rendeles_SUM].Rend_azon) LEFT JOIN 1_1_1_Nyitott_EBA_full ON [2_2_Lekotott_osszeg_lista].eba_tetel_az = [1_1_1_Nyitott_EBA_full].eba_az) LEFT JOIN 0_1_KH_prkod_torzs ON [2_2_Lekotott_osszeg_lista].Kérelem = [0_1_KH_prkod_torzs].Pr_kod) LEFT JOIN 0_0_EBA_Rendeles_Tetel_azonositok ON [2_2_Lekotott_osszeg_lista].rend_azon = [0_0_EBA_Rendeles_Tetel_azonositok].rend_az
+
+UNION
+SELECT
+0 AS Rend_azon,
+[1_3_3_Kivetelek_SUM].KH,
+0 AS torzs_eszkoz,
+[1_3_3_Kivetelek_SUM].Objektum,
+"" AS [Rövid szöveg],
+"" AS Lerakodóhely,
+"EUR" AS Pénznem,
+0 AS megrend_menny,
+[1_3_3_Kivetelek_SUM].[Érték/beszámoló Pnem] AS Lekot_ossz,
+"" AS eba_tetel_az,
+0 AS Eszköz,
+0 AS Alszám,
+0 AS [Főkönyvi számla],
+[1_3_3_Kivetelek_SUM].[Érték/beszámoló Pnem] AS Szamlazott,
+0 AS Megrendelt,
+0 AS [EBA-ban]
+FROM [1_3_3_Kivetelek_SUM]
+
+UNION SELECT
+0 AS Rend_azon,
+[1_3_2_791-esek_SUM].Költséghely,
+0 AS torzs_eszkoz,
+[1_3_2_791-esek_SUM].[Beruházási rendelés],
+"" AS [Rövid szöveg],
+"" AS Lerakodóhely,
+"EUR" AS Pénznem,
+0 AS megrend_menny,
+[1_3_2_791-esek_SUM].[Érték/beszámoló Pnem] AS Lekot_ossz,
+"" AS eba_tetel_az,
+0 AS Eszköz,
+0 AS Alszám,
+0 AS [Főkönyvi számla],
+[1_3_2_791-esek_SUM].[Érték/beszámoló Pnem] AS Szamlazott,
+0 AS Megrendelt,
+0 AS [EBA-ban]
+FROM [1_3_2_791-esek_SUM]
+
+UNION SELECT
+0 AS Rend_azon,
+[1_3_1_0_kivetelek].KH,
+0 AS torzs_eszkoz,
+[1_3_1_0_kivetelek].Objektum,
+"" AS [Rövid szöveg],
+"" AS Lerakodóhely,
+"EUR" AS Pénznem,
+0 AS megrend_menny,
+[1_3_1_0_kivetelek].[Érték/beszámoló Pnem] AS Lekot_ossz,
+"" AS eba_tetel_az,
+0 AS Eszköz,
+0 AS Alszám,
+0 AS [Főkönyvi számla],
+[1_3_1_0_kivetelek].[Érték/beszámoló Pnem] AS Szamlazott,
+0 AS Megrendelt,
+0 AS [EBA-ban]
+FROM [1_3_1_0_kivetelek];
+
+'3_1_Lekotott_osszeg'
+SELECT [2_3_Lekotott_osszeg_full_list].kh_vegl AS KH, [2_3_Lekotott_osszeg_full_list].Kérelem AS Beruh_Rend, Sum([2_3_Lekotott_osszeg_full_list].Lekot_ossz) AS SumOfLekot_ossz, Sum([2_3_Lekotott_osszeg_full_list].Szamlazott) AS SumOfSzamlazott, Sum([2_3_Lekotott_osszeg_full_list].Megrendelt) AS SumOfMegrendelt, Sum([2_3_Lekotott_osszeg_full_list].[EBA-ban]) AS [SumOfEBA-ban]
+FROM 2_3_Lekotott_osszeg_full_list
+GROUP BY [2_3_Lekotott_osszeg_full_list].kh_vegl, [2_3_Lekotott_osszeg_full_list].Kérelem;
+
+'3_2_CAPEX_REPORT_Full'
+SELECT [1_9_Budget].KH, [1_9_Budget].Kérelem, [1_9_Budget].[Objektum megnevezése], [1_9_Budget].Budget, [3_1_Lekotott_osszeg].SumOfLekot_ossz AS Lekot_ossz, [3_1_Lekotott_osszeg].SumOfSzamlazott AS Szamlazott, [3_1_Lekotott_osszeg].SumOfMegrendelt AS Megrendelt, [3_1_Lekotott_osszeg].[SumOfEBA-ban] AS [EBA-ban], ([1_9_Budget].[Budget]-[3_1_Lekotott_osszeg].[SumOfLekot_ossz]) AS Szabad_Keret
+FROM 1_9_Budget LEFT JOIN 3_1_Lekotott_osszeg ON [1_9_Budget].Kérelem = [3_1_Lekotott_osszeg].Beruh_Rend;
+
+'4_1_0_Kivételek'
+SELECT [12_Tukor_kivetelek].Rendelés, Sum([12_Tukor_kivetelek].[Növek#]) AS [SumOfNövek#]
+FROM 12_Tukor_kivetelek
+GROUP BY [12_Tukor_kivetelek].Rendelés;
+
+'4_1_Tukor'
+SELECT [11_Tukor].[B#rendelés], Sum([11_Tukor].[Növek#]) AS [SumOfNövek#]
+FROM 11_Tukor
+WHERE ((([11_Tukor].Eszköz)<>""))
+GROUP BY [11_Tukor].[B#rendelés];
+
+'4_2_Tukor_kivetelekkel'
+SELECT [4_1_Tukor_osszeg].[B#rendelés], [4_1_Tukor_osszeg].[SumOfNövek#]
+FROM 4_1_Tukor_osszeg
+UNION SELECT [4_1_0_Kivételek].Rendelés, [4_1_0_Kivételek].[SumOfNövek#]
+FROM 4_1_0_Kivételek
+ORDER BY [4_1_Tukor_osszeg].[B#rendelés];
+
+'4_3_tukor_prkod'
+SELECT [4_2_Tukor_kivetelekkel].[B#rendelés], Sum([4_2_Tukor_kivetelekkel].[SumOfNövek#]) AS [SumOfSumOfNövek#]
+FROM 4_2_Tukor_kivetelekkel
+GROUP BY [4_2_Tukor_kivetelekkel].[B#rendelés];
